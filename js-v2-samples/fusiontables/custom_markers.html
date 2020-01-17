@@ -1,0 +1,103 @@
+<!DOCTYPE html> 
+<!--
+  copyright (c) 2011 Google inc.
+
+  You are free to copy and use this sample.
+  License can be found here: http://code.google.com/apis/ajaxsearch/faq/#license
+
+-->
+<html> 
+<head> 
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" /> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/> 
+
+<title>Google Maps JavaScript API v3 Example: Fusion Tables Layer</title> 
+
+<style>
+  body { font-family: Arial, sans-serif; }
+  #map_canvas { height: 600px; width:700px; }
+</style>
+
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+
+<script type="text/javascript" id="script">
+google.load('visualization', '1');
+
+var tableid = 297050;
+var map;
+var lastWindow;
+
+function initialize() {
+  map = new google.maps.Map(document.getElementById('map_canvas'), {
+    center: new google.maps.LatLng(37.4, -122.1),
+    zoom: 10,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  });
+
+  setData();
+}
+
+function setData() {
+  // Create a Chart Tools query to send to Fusion Tables
+  var query = new google.visualization.Query(
+      'http://www.google.com/fusiontables/gvizdata?tq=' +
+      encodeURIComponent("SELECT 'Store Name', Coordinates, delivery FROM 297050")
+  );
+  query.send(getData);
+}
+
+// Define callback function, this is called when the results are returned
+function getData(response) {
+
+  // For more information on the response object, see the documentation
+  // http://code.google.com/apis/visualization/documentation/reference.html#QueryResponse
+  var numRows = response.getDataTable().getNumberOfRows();
+
+  for (i = 0; i < numRows; i++) {
+    var string_coordinates = response.getDataTable().getValue(i, 1);
+    var split_coordinates = string_coordinates.split(",");
+    var lat = split_coordinates[0];
+    var lng = split_coordinates[1];
+    var coordinate = new google.maps.LatLng(lat, lng);
+
+    // Get row data for the info window
+    var store = response.getDataTable().getValue(i, 0);
+    var delivery = response.getDataTable().getValue(i, 2);
+
+    createMarker(store, delivery, coordinate);
+  }
+}
+
+function createMarker(store, delivery, coordinate) {
+  // Create the marker
+  var marker = new google.maps.Marker({
+    map: map, 
+    position: coordinate,
+    icon: new google.maps.MarkerImage("http://www.google.com/images/icons/product/fusion_tables-32.png")
+  });
+
+  google.maps.event.addListener(marker, 'click', function(event) {
+    if (lastWindow) {
+      lastWindow.close();
+    } else {
+      lastWindow = new google.maps.InfoWindow();
+    }
+
+    // Set the position and contents of the info window, and open the window
+    lastWindow.setPosition(coordinate);
+    lastWindow.setContent(store + "<br />Delivers? " + delivery);
+    lastWindow.open(map);
+  });
+}
+</script>
+
+</head>
+<body onload="initialize()">
+<div id="map_canvas"></div>
+
+<div id="code"></div>
+<script type="text/javascript" src="script/script.js"></script>
+</body> 
+</html> 
+

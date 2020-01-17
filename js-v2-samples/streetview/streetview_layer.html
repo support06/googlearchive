@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+ Copyright 2008 Google Inc. 
+ Licensed under the Apache License, Version 2.0: 
+ http://www.apache.org/licenses/LICENSE-2.0 
+ -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Streetview API: Simple example</title>
+    <script type="text/javascript" src="http://maps.google.com/maps?file=api&amp;&v=2&key=ABQIAAAAjU0EJWnWPMv7oQ-jjS7dYxSPW5CJgpdgO_s4yyMovOaVh_KvvhSfpvagV18eOyDWu7VytS6Bi1CWxw"></script>
+    <script>
+var marker;
+var overlayInstance = null;
+var map;
+var client;
+var lastMarkerLocation;
+var panorama;
+var mapT;
+
+var maximizeclickHandler = function() {};
+var maximizeendHandler = function() {};
+var infowindowbeforecloseHandler = function() {};
+
+function load() {
+  client = new GStreetviewClient();
+  var latlng = new GLatLng(45.511889, -122.675578);
+  map = new GMap2(document.getElementById("map"));
+  map.setCenter(latlng, 13);
+
+  var guyIcon = new GIcon(G_DEFAULT_ICON);
+  guyIcon.image = "http://maps.gstatic.com/mapfiles/cb/man_arrow-0.png";
+  guyIcon.transparent = "http://maps.gstatic.com/mapfiles/cb/man-pick.png";
+  guyIcon.imageMap = [
+        26,13, 30,14, 32,28, 27,28, 28,36, 18,35, 18,27, 16,26,
+        16,20, 16,14, 19,13, 22,8
+     ];
+  guyIcon.iconSize = new GSize(49, 52);
+  guyIcon.iconAnchor = new GPoint(25, 35);  // near base of guy's feet
+  guyIcon.infoWindowAnchor = new GPoint(25, 5);  // top of guy's head
+
+  marker = new GMarker(latlng, {icon: guyIcon, draggable: true});
+  map.addOverlay(marker);
+  lastMarkerLocation = latlng;
+  GEvent.addListener(marker, "dragend", onDragEnd);
+  GEvent.addListener(marker, "click", openPanoramaBubble);
+  toggleOverlay();
+  
+  // Register event listeners to marker and info window.
+  GEvent.addListener(map.getInfoWindow(), "maximizeclick", function() {
+    maximizeclickHandler();
+  });
+  GEvent.addListener(map.getInfoWindow(), "maximizeend", function() {
+    maximizeendHandler();
+  });
+  GEvent.addListener(marker, "infowindowbeforeclose", function() {
+    infowindowbeforecloseHandler();
+  });
+}
+
+function openPanoramaBubble() {
+  var contentNode = document.createElement('div');
+  contentNode.style.textAlign = 'center';
+  contentNode.style.width = '500px';
+  contentNode.style.height = '300px';
+  contentNode.innerHTML = 'Loading panorama';
+
+  var smallNode = document.createElement('div');
+  smallNode.style.width = '200px';
+  smallNode.style.height = '200px';
+  smallNode.id = 'pano';
+  document.body.appendChild(smallNode);
+
+  marker.openInfoWindow(smallNode, {
+    maxContent: contentNode,
+    maxTitle: "Full screen",
+    onOpenFn: function() {
+      alert('Will I ever get called??? No I wont');
+    }
+  });
+
+  panorama = panorama || new GStreetviewPanorama(smallNode);
+  panorama.setContainer(smallNode);
+  panorama.setLocationAndPOV(marker.getLatLng(), null);
+  GEvent.addListener(panorama, "newpano", onNewLocation);
+  GEvent.addListener(panorama, "yawchanged", onYawChange);
+  
+  // Update handlers for info window and marker event listeners.
+  maximizeclickHandler = function() {
+    panorama.remove();
+  };
+  maximizeendHandler = function() {
+    panorama.setContainer(contentNode);
+    window.setTimeout("panorama.checkResize()", 5);
+  };
+  infowindowbeforecloseHandler = function() {
+    panorama.remove();
+  };
+}
+
+function toggleOverlay() {
+  if (!overlayInstance) {
+    overlayInstance = new GStreetviewOverlay();
+    map.addOverlay(overlayInstance);
+  } else {
+    map.removeOverlay(overlayInstance);
+    overlayInstance = null;
+  }
+}
+
+function onYawChange(newYaw) {
+  var GUY_NUM_ICONS = 16;
+  var GUY_ANGULAR_RES = 360/GUY_NUM_ICONS;
+  if (newYaw < 0) {
+    newYaw += 360;
+  }
+  guyImageNum = Math.round(newYaw/GUY_ANGULAR_RES) % GUY_NUM_ICONS;
+  guyImageUrl = "http://maps.gstatic.com/mapfiles/cb/man_arrow-" + guyImageNum + ".png";
+  marker.setImage(guyImageUrl);
+}
+
+function onNewLocation(lat, lng) {
+  var latlng = new GLatLng(lat, lng);
+  marker.setLatLng(latlng);
+}
+
+function onDragEnd() {
+  var latlng = marker.getLatLng();
+  if (panorama) {
+    client.getNearestPanorama(latlng, onResponse);
+  }
+}
+
+function onResponse(response) {
+  if (response.code != 200) {
+    marker.setLatLng(lastMarkerLocation);
+  } else {
+    var latlng = new GLatLng(response.Location.lat, response.Location.lng);
+    marker.setLatLng(latlng);
+    lastMarkerLocation = latlng;
+    openPanoramaBubble();
+  }
+}
+    </script>
+    <body onload="load()" onunload="GUnload()">
+      <div id="map" style="width: 550px; height: 380px"></div>
+      <br/>
+      <input type="button" onclick="toggleOverlay()" value="Toggle Tile Layer"/>
+    </body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+  copyright (c) 2011 Google inc.
+
+  You are free to copy and use this sample.
+  License can be found here: http://code.google.com/apis/ajaxsearch/faq/#license
+-->
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+
+<title>GViz API Example: Fusion Tables Data Source</title>
+
+<style>
+  body { font-family: Arial, sans-serif; }
+</style>
+
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" id="script">
+google.load('visualization', '1');
+
+function changeData(scorer) {
+  var whereClause = "";
+  if(scorer) {
+    whereClause = " WHERE 'Scoring Team' LIKE '" + scorer + "'";
+  }
+  var queryText = encodeURIComponent("SELECT 'Scoring Team', 'Receiving Team', 'Minute of goal' FROM 197026" + whereClause);
+  var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+  
+  query.send(getData);
+}
+
+function getData(response) {
+  numRows = response.getDataTable().getNumberOfRows();
+  numCols = response.getDataTable().getNumberOfColumns();
+  
+  fusiontabledata = "<b>";
+  for(i = 0; i < numCols; i++) {
+    fusiontabledata += response.getDataTable().getColumnLabel(i) + ",";
+  }
+  fusiontabledata += "</b><br />";
+  
+  for(i = 0; i < numRows; i++) {
+    for(j = 0; j < numCols; j++) {
+      fusiontabledata += response.getDataTable().getValue(i, j) + ", ";
+    }
+    fusiontabledata += "<br />";
+  }  
+  document.getElementById('ftdata').innerHTML = fusiontabledata;
+}
+
+</script>
+</head>
+<body onload="changeData();">
+
+Scoring Team: <select id="selections" onchange="changeData(this.value);">
+  <option value="">All</option>
+  <option value="Germany">Germany</option>
+  <option value="New Zealand">New Zealand</option>
+  <option value="Uruguay">Uruguay</option>
+</select>
+<div id="ftdata"></div>
+
+<div id="code"></div>
+<script type="text/javascript" src="script/script.js"></script>
+</body>
+</html>

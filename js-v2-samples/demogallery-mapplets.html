@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><!--
+ Copyright 2008 Google Inc. 
+ Licensed under the Apache License, Version 2.0: 
+ http://www.apache.org/licenses/LICENSE-2.0 
+ -->
+<html xmlns="http://www.w3.org/1999/xhtml"><head> 
+<title>Google Mapplets API Demo Gallery</title>
+<style type="text/css">
+  body {
+    font-family: Arial, sans serif;
+    font-size: 12px;
+  }
+  td {
+    border: none;
+    background-color: #eee;
+  }
+  img { 
+    border: 1px solid grey;
+  }
+</style>
+<script type="text/javascript">
+//<![CDATA[
+var feed;
+var curNum;
+
+function cm_load() {  
+  cm_getJSON(true);
+}
+
+/**
+* Utility function to extract parameters appended to URL.
+* @param {String} name Name of parameter in URL
+* @return {String} Value of parameter, or "" if not found
+*/
+function getURLParam(name) {
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  var results = regex.exec(window.location.href);
+  return (results === null ? "" : results[1]);
+}
+
+function onJSONLoad(json) {
+  feed = json.feed;
+  curNum = 0;
+  if ( !feed.entry) {
+    document.getElementById("sidebar").innerHTML = "Try again!";
+    feed.entry = [];
+  } 
+  updateGallery();
+    
+  if (feed.entry.length <=5) {
+    document.getElementById("nextBUTTON").disabled = true;
+    document.getElementById("nextBUTTON2").disabled = true;
+  } else {
+    document.getElementById("nextBUTTON").disabled = false;
+    document.getElementById("nextBUTTON2").disabled = false;
+  }
+  document.getElementById("previousBUTTON").disabled = true;
+  document.getElementById("previousBUTTON2").disabled = true;
+}
+
+function updateGallery() {
+  var min = curNum;
+  var feedLength = feed.entry && feed.entry.length || 0;
+  var max = Math.min(curNum+5, feedLength);
+  var htmlAll = ['<br/>Showing ' + (min + 1) + ' - ' + max + ' of ' + feedLength];
+  htmlAll.push('<table><tbody>');
+  for (var i = min; i < max; i++) {
+      var entry = feed.entry[i];
+      var title = entry.gsx$title.$t;
+      var author = entry.gsx$author.$t;
+      var description = entry.gsx$description.$t;
+      var thumbnailurl = entry.gsx$thumbnailurl.$t.replace('/http[s]?:/', '');
+      var docurl = entry.gsx$docurl.$t;
+      var sourceurl = entry.gsx$sourceurl.$t;
+      var url = "http://maps.google.com/maps/mpl?moduleurl=" + sourceurl;
+
+      var html = '<tr><td><a target="_blank" href="' + url + '"><img style="width: 160px; height: 128px" src="' + thumbnailurl + '"/></a></td><td valign="top"><strong><a target="_blank" href="' + url + '">' + title + '</a></strong> <br/>' + description + '<br/><br/>';
+      html += '<a target="_blank" href="' + sourceurl + '">View the source</a>';
+      if (docurl) {
+        html += ' | <a target="_blank" href="' + docurl + '">Read the docs</a>';
+      }
+      html += '<br/><br/>';
+      html += '<span style="font-size:10px; font-style: italic">' + 'Example by ' + author + '</span></td></tr>';
+      htmlAll.push(html);
+  }
+  htmlAll.push('</tbody></table>');
+  document.getElementById("sidebar").innerHTML = htmlAll.join("");
+}
+
+function showNext() {
+  curNum += 5;
+  updateGallery();
+  document.getElementById("previousBUTTON").disabled = false;
+  document.getElementById("previousBUTTON2").disabled = false;
+  if (curNum >= (feed.entry.length - 5)) {
+    document.getElementById("nextBUTTON").disabled = true;
+    document.getElementById("nextBUTTON2").disabled = true;
+  }
+}
+
+function showPrevious() {
+  curNum -= 5;
+  updateGallery();
+  if (curNum <= 0) {
+    document.getElementById("previousBUTTON").disabled = true;
+    document.getElementById("previousBUTTON2").disabled = true;
+  } 
+  if (curNum < feed.entry.length) {
+    document.getElementById("nextBUTTON").disabled = false;
+    document.getElementById("nextBUTTON2").disabled = false;
+  }
+}
+
+/**
+ * Creates a script tag in the page that loads in the 
+ * JSON feed for the specified key/ID. 
+ * Once loaded, it calls onJSONLoad.
+ */
+function cm_getJSON(preferSearch) {
+  var script = document.createElement('script');
+  script.setAttribute('src', '//spreadsheets.google.com/feeds/list/o03712292828507838454.7466931754443925657/od5/public/values' +
+                        '?reverse=true&alt=json-in-script&callback=onJSONLoad');
+  script.setAttribute('id', 'jsonScript');
+  script.setAttribute('type', 'text/javascript');
+  document.documentElement.firstChild.appendChild(script);
+}
+
+
+//]]>
+
+</script>
+
+</head>
+<body onload="cm_load()">
+<input type="button" onclick="showPrevious()" value="Previous" id="previousBUTTON"/>
+<input type="button" onclick="showNext()" value="Next" id="nextBUTTON"/>
+<br/>
+<div id="sidebar"></div>
+<br/>
+<input type="button" onclick="showPrevious()" value="Previous" id="previousBUTTON2"/>
+<input type="button" onclick="showNext()" value="Next" id="nextBUTTON2"/>
+</body> </html>

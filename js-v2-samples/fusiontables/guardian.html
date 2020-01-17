@@ -1,0 +1,209 @@
+<html>
+<head>
+
+<title>Guardian</title>
+<style type="text/css">
+  body { font-family: Arial, sans-serif; }
+  #map_canvas { height: 600px; width:700px; }
+</style>
+<meta />
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script> 
+
+<script>
+
+/*
+
+
+*/
+
+var columns = [
+  {
+		"columnName": '% White British',
+		"buckets": [
+			{
+				"min": 0,
+				"max": 50,
+				"color": '#851715'
+			},
+			{
+				"min": 50,
+				"max": 80,
+				"color": '#CC433F'
+			},
+			{
+				"min": 80,
+				"max": 90,
+				"color": '#E6726F'
+			},
+			{
+				"min": 90,
+				"max": 100,
+				"color": '#E6918E'
+			}
+		]
+  },
+  {
+		"columnName": '% White: Irish',
+		"buckets": [
+			{
+				"min": 0,
+				"max": 0.5,
+				"color": '#090974'
+			},
+			{
+				"min": 0.5,
+				"max": 0.8,
+				"color": '#313186'
+			},
+			{
+				"min": 0.8,
+				"max": 1,
+				"color": '#4F4FD9'
+			},
+			{
+				"min": 1,
+				"max": 100,
+				"color": '#7373D9'
+			}
+		]
+  }
+]
+
+
+var tableid = 854369;
+var map, layer;
+var center = new google.maps.LatLng(52.979455724, -1.474779827647);
+var zoom = 6;
+
+function initialize() {
+  
+  map = new google.maps.Map(document.getElementById('map_canvas'), {
+    center: center,
+    zoom: zoom,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  });
+  
+  layer = new google.maps.FusionTablesLayer({
+    query: {
+      select: "geometry",
+      from: tableid
+    }
+  });
+  
+  init_selectmenu();
+
+  addStyle(getKey());
+  layer.setMap(map);
+}
+
+function getKey() {
+  for(key in colors) {
+    return key;
+  }
+}
+
+function init_selectmenu() {
+  var selectmenu = document.getElementById('selector');
+  for(column in columns) {
+    var option = document.createElement('option');
+    option.setAttribute('value', columns[column].columnName);
+    option.innerHTML = columns[column].columnName;
+    selectmenu.appendChild(option);
+  }
+}
+
+function addStyle(column) {
+  var styles = new Array();
+  for(bucket in buckets) {
+    var item = columns[column];
+    styles.push({
+    	where: generateWhere(item.columnName, item.buckets.),
+    	polygonOptions: {
+    	  fillColor: columns[column].buckets.color
+    	}
+    });
+  }
+    {
+      where: generateWhere(column, divisions[column][2], 100),
+      polygonOptions: {
+        fillColor: colors[column][3]
+      }
+    },
+    {
+      where: generateWhere(column, divisions[column][1], divisions[column][2]),
+      polygonOptions: {
+        fillColor: colors[column][2]
+      }
+    },
+    {
+      where: generateWhere(column, divisions[column][0], divisions[column][1]),
+      polygonOptions: {
+        fillColor: colors[column][1]
+      }
+    },
+    {
+      where: generateWhere(column, 0, divisions[column][0]),
+      polygonOptions: {
+        fillColor: colors[column][0]
+      }
+    }
+  ];
+
+  layer.set('styles', styles);
+  updateLegend(column);
+}
+
+function generateWhere(column_name, low, high) {
+  return "'" + column_name + "' >= " + low + " AND '" + column_name + "' < " + high;
+}
+
+function updateLegend(column) {
+  var legendDiv = document.createElement('div');
+  var legend = new Legend(legendDiv, column);
+  legendDiv.index = 1;
+  map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].pop();
+  map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legendDiv);
+}
+
+function Legend(controlDiv, column) {
+  controlDiv.style.padding = '10px';
+  var controlUI = document.createElement('div');
+  controlUI.style.backgroundColor = 'white';
+  controlUI.style.borderStyle = 'solid';
+  controlUI.style.borderWidth = '1px';
+  controlUI.style.width = '125px';
+  controlUI.title = 'Legend';
+  controlDiv.appendChild(controlUI);
+  var controlText = document.createElement('div');
+  controlText.style.fontFamily = 'Arial,sans-serif';
+  controlText.style.fontSize = '12px';
+  controlText.style.paddingLeft = '4px';
+  controlText.style.paddingRight = '4px';
+  controlText.innerHTML = '<p><b>' + column + '</b></p>' +
+    '<div style="background-color: ' + colors[column][3] + '; height: 20px; width: 20px; margin: 3px; float: left;"></div>' +
+    divisions[column][2] + ' - 100<br style="clear: both;"/>' +
+    '<div style="background-color: ' + colors[column][2] + '; height: 20px; width: 20px; margin: 3px; float: left;"></div>' +
+    divisions[column][1] + ' - ' + divisions[column][2] + '<br style="clear: both;" />' +
+    '<div style="background-color: ' + colors[column][1] + '; height: 20px; width: 20px; margin: 3px; float: left;"></div>' +
+    divisions[column][0] + ' - ' + divisions[column][1] + '<br style="clear: both;" />' +
+    '<div style="background-color: ' + colors[column][0] + '; height: 20px; width: 20px; margin: 3px; float: left;"></div>' +
+    '0 - ' + divisions[column][0] + '<br style="clear: both;" /><br />';
+  controlUI.appendChild(controlText);
+}
+
+
+</script>
+</head>
+
+<body>
+
+<select onchange="addStyle(this.value);" id="selector"></select>
+
+<div id="map_canvas"></div>
+
+<script type="text/javascript">
+initialize();
+</script>
+
+</body>
+</html>

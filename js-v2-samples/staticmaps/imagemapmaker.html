@@ -1,0 +1,89 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+ Copyright 2008 Google Inc. 
+ Licensed under the Apache License, Version 2.0: 
+ http://www.apache.org/licenses/LICENSE-2.0 
+ -->
+<html xmlns="http://www.w3.org/1-959/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Google Maps JavaScript API Example: Simple Polygon</title>
+    <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAA-O3c-Om9OcvXMOJXreXHAxQGj0PqsCtxKvarsoS-iqLdqZSKfxS27kJqGZajBjvuzOBLizi931BUow"
+      type="text/javascript"></script>
+    <script src="http://imagine-it.org/google/convertpoly2.php" type="text/javascript"></script>
+    <script src="http://www.netzgesta.de/mapper/mapper.js"></script>
+    <script type="text/javascript">
+    var map;
+    var polys = [];
+
+    function initialize() {
+      if (GBrowserIsCompatible()) {
+        map = new GMap2(document.getElementById("map_canvas"));
+        map.setCenter(new GLatLng(42, -99), 3);
+        map.addControl(new GSmallMapControl());
+       	for (stateCode in states) { 
+          var polygon = createPoly(stateCode);
+          polys.push(polygon);
+          map.addOverlay(polygon);
+        }
+      }
+    }   
+  
+    function createPoly(stateCode) {
+       var latlngs = [];
+       for (var i = 0; i < states[stateCode].length; i++) {
+         var latlng = states[stateCode][i];
+         latlngs.push(new GLatLng(latlng[0], latlng[1]));
+       }
+       var polygon = new GPolygon(latlngs, "#f33f00", 0, 0, "#ff0000", 0.01);
+       polygon.stateCode = stateCode;
+       return polygon;
+    }
+
+    function createStaticMap() {
+      var staticMap = document.createElement("img");
+      var key = "ABQIAAAA-O3c-Om9OcvXMOJXreXHAxQGj0PqsCtxKvarsoS-iqLdqZSKfxS27kJqGZajBjvuzOBLizi931BUow";   
+      staticMap.src = "http://maps.google.com/staticmap?center=" + map.getCenter().toUrlValue(6) + "&zoom=" + map.getZoom() + "&size=" + map.getSize().width + "x" + map.getSize().height + "&key=" + key;
+      staticMap.useMap = "#states";
+      staticMap.width =  map.getSize().width;
+      staticMap.height = map.getSize().height;
+      staticMap.className = "mapper";
+      document.getElementById("result").appendChild(staticMap);
+    }
+
+    function createImageMap() {
+      var imageMap = document.createElement("map");
+      imageMap.name = "states";
+      for (var i = 0; i < polys.length; i++) {
+        var coords = [];
+        for (var j = 0; j < polys[i].getVertexCount(); j++) {
+          var pixel = map.fromLatLngToContainerPixel(polys[i].getVertex(j));
+          coords.push(pixel.x + "," + pixel.y);
+        }
+        var area = document.createElement("area");
+        area.shape = "polygon"; 
+        area.coords = coords.join(",");
+        var stateCode = polys[i].stateCode.slice(0, 2);
+        area.href = "javascript:stateClicked('" + stateCode + "');";
+        imageMap.appendChild(area);    
+      }
+      document.getElementById("result").appendChild(imageMap);   
+      document.getElementById("resultHtml").style.display = "block";
+      document.getElementById("resultHtml").innerHTML = document.getElementById("result").innerHTML;
+    }
+    </script>
+  </head>
+
+  <body onload="initialize()" onunload="GUnload()">
+    <div id="map_canvas" style="width: 500px; height: 300px"></div>
+    <br/>
+    <input type="button" onclick="createImageMap();createStaticMap();" value="Create Static Map + Image Map"/>
+    |
+    <input type="button" onclick="addMapper();" value="Add Mapper"/>
+    <br/><br/>
+    <div id="result"></div>
+    <textarea id="resultHtml" style="width: 500px; height: 300px;display:none;"></textarea>
+  </body>
+</html>
+

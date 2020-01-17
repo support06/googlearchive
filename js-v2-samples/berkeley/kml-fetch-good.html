@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<!--
+ Copyright 2008 Google Inc. 
+ Licensed under the Apache License, Version 2.0: 
+ http://www.apache.org/licenses/LICENSE-2.0 
+ -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <title>Google Earth API Samples - Fetch Good KML</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+  <script type="text/javascript" src="http://www.google.com/jsapi?hl=en&amp;key=ABQIAAAAwbkbZLyhsmTCWXbTcjbgbRSzHs7K5SvaUdm8ua-Xxy_-2dYwMxQMhnagaawTo7L1FE1-amhuQxIlXw"></script>
+  <script type="text/javascript">
+  /* <![CDATA[ */
+  var ge;
+  google.load("earth", "1");
+
+  function init() {
+    google.earth.createInstance('map3d', initCB, failureCB);
+  }
+  
+  function addListener() {
+   google.earth.addEventListener(ge.getGlobe(), "mousedown",
+                              function(event) {
+     console.log("md");
+     var placemark = ge.createPlacemark('');
+     placemark.setName("Sudden Oak Death!");
+     ge.getFeatures().appendChild(placemark);
+  
+     // Create point
+     var point = ge.createPoint('');
+     point.setLatitude(event.getLatitude());
+     point.setLongitude(event.getLongitude());
+     placemark.setGeometry(point);
+   });
+  }
+  function initCB(instance) {
+    ge = instance;
+    ge.getWindow().setVisibility(true);
+    
+    // add a navigation control
+    ge.getNavigationControl().setVisibility(ge.VISIBILITY_AUTO);
+    
+    // add some layers
+    ge.getLayerRoot().enableLayerById(ge.LAYER_BORDERS, true);
+    ge.getLayerRoot().enableLayerById(ge.LAYER_ROADS, true);
+    // in this sample we will attempt
+    // to fetch a  KML file and show it
+    
+    function finished(object) {
+      if (!object) {
+        alert('bad or NULL kml');
+        return;
+      }
+      ge.getFeatures().appendChild(object);
+      var la = ge.createLookAt('');
+      la.set(38.18942, -122.506857, 0, ge.ALTITUDE_RELATIVE_TO_GROUND, -.63, 0, 99809);
+      ge.getView().setAbstractView(la);         
+    }
+    
+    // fetch the KML
+    var url = 'http://googlemaps.github.io/js-v2-samples/berkeley/suddenoakdeath.kmz';
+    google.earth.fetchKml(ge, url, finished);
+    
+  }
+  function addKml(){
+    var url = 'http://googlemaps.github.io/js-v2-samples/berkeley/ramorum.kml';
+    google.earth.fetchKml(ge, url, function(object) {
+      if (!object) {
+        alert('bad or NULL kml');
+        return;
+      }
+      ge.getFeatures().appendChild(object);
+    });
+  }
+
+  function failureCB() {
+    alert('Google earth loading failed!');
+  }
+  
+  /* ]]> */
+  </script>
+</head>
+<body onload="init();">
+  <h1>Google Earth API & Sudden Oak Death</h1>
+  <dl>
+  </dl>
+  <div style="clear: both;"></div>
+    <div id="map3d_container" style="float:left;border: 1px solid #000; width: 500px; height: 500px;">
+      <div id="map3d" style="height: 100%;"></div>
+    </div>
+    <div style="float:left;width:300px">
+    <table>
+    <tr><td></td><td><img src="suddenoakdeath_instructions.jpg"/></td></tr>
+    <tr><td><input type="checkbox" checked/></td><td><img src="suddenoakdeath_confirmation.jpg"/></td></tr>
+    <tr><td><input type="checkbox" checked/></td><td><img src="suddenoakdeath_photos.jpg"/></td></tr>
+    <tr><td><input type="checkbox" onclick="addKml()"/></td><td><img src="suddenoakdeath_ramorum.jpg"/></td></tr>
+    <tr><td><input type="checkbox" onclick="addListener()"/></td><td>Turn on Tree Adding</td></tr>
+    </div>
+</body>
+</html>
